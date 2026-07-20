@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>⚡ DevDeck — Flashcard Quiz for Developers</title>
+<meta name="description" content="A futuristic flashcard quiz app for app developers."/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#070b14; --bg2:#0d1424; --panel:rgba(20,28,48,.6);
+    --cyan:#00e5ff; --magenta:#ff2bd6; --violet:#7c4dff;
+    --text:#e6f0ff; --muted:#7d8aa8; --border:rgba(120,180,255,.15);
+    --glow:0 0 30px rgba(0,229,255,.25), 0 0 60px rgba(255,43,214,.15);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Inter',sans-serif;color:var(--text);
+    background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(124,77,255,.25), transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, rgba(0,229,255,.18), transparent 60%),
+      linear-gradient(180deg,var(--bg),var(--bg2));
+    min-height:100vh; overflow-x:hidden;
+  }
+  body::before{
+    content:""; position:fixed; inset:0; pointer-events:none; opacity:.25;
+    background-image:linear-gradient(rgba(120,180,255,.08) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(120,180,255,.08) 1px,transparent 1px);
+    background-size:40px 40px;
+    -webkit-mask-image:radial-gradient(ellipse at center, black 40%, transparent 80%);
+    mask-image:radial-gradient(ellipse at center, black 40%, transparent 80%);
+  }
+  .app{max-width:1080px;margin:0 auto;padding:28px 20px 80px;position:relative;z-index:1}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;flex-wrap:wrap;gap:12px}
+  .logo{display:flex;align-items:center;gap:10px;font-family:'JetBrains Mono',monospace;font-weight:600;font-size:20px}
+  .logo .bolt{
+    width:36px;height:36px;border-radius:10px;display:grid;place-items:center;
+    background:linear-gradient(135deg,var(--cyan),var(--magenta));
+    color:#000;font-size:20px;box-shadow:var(--glow);
+  }
+  .logo small{color:var(--muted);font-weight:400;font-size:12px;margin-left:6px}
+  .chip{
+    font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--cyan);
+    background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.3);
+    padding:8px 14px;border-radius:999px;
+  }
+  .progress{height:4px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden;margin-bottom:24px}
+  .progress > div{height:100%;background:linear-gradient(90deg,var(--cyan),var(--magenta));transition:width .4s ease;box-shadow:0 0 12px var(--cyan)}
+  .stage{perspective:1500px;margin:0 auto;max-width:720px}
+  .card{
+    position:relative;width:100%;aspect-ratio:16/10;min-height:340px;
+    transform-style:preserve-3d;transition:transform .7s cubic-bezier(.2,.8,.2,1);cursor:pointer;
+  }
+  .card.flipped{transform:rotateY(180deg)}
+  .face{
+    position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+    border-radius:24px;padding:36px;display:flex;flex-direction:column;justify-content:space-between;
+    background:var(--panel);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+    border:1px solid var(--border);box-shadow:var(--glow);overflow:hidden;
+  }
+  .face::before{
+    content:"";position:absolute;inset:0;border-radius:24px;padding:1px;
+    background:linear-gradient(135deg,var(--cyan),transparent 40%,var(--magenta));
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;opacity:.6;
+  }
+  .back{transform:rotateY(180deg)}
+  .face .tag{
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.15em;
+    text-transform:uppercase;color:var(--magenta);align-self:flex-start;
+    padding:6px 12px;border:1px solid rgba(255,43,214,.3);border-radius:6px;
+    background:rgba(255,43,214,.06);
+  }
+  .face .label{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);margin-top:8px}
+  .face .text{font-size:24px;line-height:1.4;font-weight:600;margin-top:14px;flex:1;display:flex;align-items:center}
+  .face .footer{display:flex;justify-content:space-between;align-items:center;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)}
+  .controls{display:flex;justify-content:center;gap:12px;margin-top:28px;flex-wrap:wrap}
+  button{
+    font-family:inherit;cursor:pointer;border-radius:12px;
+    padding:12px 22px;font-size:14px;font-weight:600;color:var(--text);
+    background:rgba(255,255,255,.04);border:1px solid var(--border);
+    transition:all .2s ease;display:inline-flex;align-items:center;gap:8px;
+  }
+  button:hover{transform:translateY(-2px);border-color:var(--cyan);box-shadow:0 0 16px rgba(0,229,255,.25)}
+  button.primary{background:linear-gradient(135deg,var(--cyan),var(--magenta));color:#000;border:none}
+  button.primary:hover{box-shadow:0 0 24px rgba(0,229,255,.5)}
+  button.danger:hover{border-color:#ff5577;color:#ff5577;box-shadow:0 0 16px rgba(255,85,119,.3)}
+  .toolbar{display:flex;justify-content:space-between;align-items:center;margin-top:20px;gap:10px;flex-wrap:wrap}
+  .toolbar .left,.toolbar .right{display:flex;gap:10px;flex-wrap:wrap}
+  footer{margin-top:50px;text-align:center;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:12px}
+  footer kbd{background:rgba(255,255,255,.06);border:1px solid var(--border);padding:2px 8px;border-radius:6px;margin:0 4px;color:var(--cyan)}
+  .modal{position:fixed;inset:0;background:rgba(5,10,20,.8);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+  .modal.show{display:flex;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .modal .box{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:28px;max-width:520px;width:100%;box-shadow:var(--glow)}
+  .modal h2{font-family:'JetBrains Mono',monospace;margin-bottom:6px;font-size:18px;color:var(--cyan)}
+  .modal p.hint{color:var(--muted);font-size:13px;margin-bottom:18px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.1em}
+  .field input,.field textarea{width:100%;padding:12px 14px;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:14px;resize:vertical}
+  .field input:focus,.field textarea:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,229,255,.15)}
+  .modal .actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--bg2);border:1px solid var(--cyan);color:var(--text);padding:12px 20px;border-radius:10px;font-size:14px;box-shadow:0 0 20px rgba(0,229,255,.4);transition:transform .3s ease;z-index:60;font-family:'JetBrains Mono',monospace}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  @media(max-width:520px){.face .text{font-size:18px}.face{padding:22px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo"><div class="bolt">⚡</div>DevDeck <small>// flashcards.exe</small></div>
+    <div class="chip" id="counter">00 / 00</div>
+  </header>
+
+  <div class="progress"><div id="bar" style="width:0%"></div></div>
+
+  <div class="stage">
+    <div id="card" class="card" onclick="flip()">
+      <div class="face front">
+        <span class="tag" id="tagF">category</span>
+        <div><div class="label">// question</div><div class="text" id="qText">Loading...</div></div>
+        <div class="footer"><span>tap to flip ↻</span><span id="idF">#001</span></div>
+      </div>
+      <div class="face back">
+        <span class="tag" id="tagB">category</span>
+        <div><div class="label">// answer</div><div class="text" id="aText">—</div></div>
+        <div class="footer"><span>tap to flip ↻</span><span id="idB">#001</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button onclick="prev()">← Previous</button>
+    <button class="primary" onclick="flip()">⟲ Show Answer</button>
+    <button onclick="next()">Next →</button>
+  </div>
+
+  <div class="toolbar">
+    <div class="left">
+      <button onclick="openModal()">＋ New Card</button>
+      <button onclick="editCard()">✎ Edit</button>
+      <button class="danger" onclick="deleteCard()">🗑 Delete</button>
+    </div>
+    <div class="right">
+      <button onclick="resetDeck()">↺ Reset Deck</button>
+    </div>
+  </div>
+
+  <footer><kbd>←</kbd><kbd>→</kbd> navigate · <kbd>Space</kbd> flip · <kbd>N</kbd> new card</footer>
+</div>
+
+<div class="modal" id="modal">
+  <div class="box">
+    <h2 id="modalTitle">// new_card</h2>
+    <p class="hint">Add a question and its answer to the deck.</p>
+    <div class="field"><label>Category</label><input id="fCat" placeholder="e.g. React, System Design"/></div>
+    <div class="field"><label>Question</label><textarea id="fQ" rows="2" placeholder="What is...?"></textarea></div>
+    <div class="field"><label>Answer</label><textarea id="fA" rows="3" placeholder="The answer is..."></textarea></div>
+    <div class="actions">
+      <button onclick="closeModal()">Cancel</button>
+      <button class="primary" onclick="saveCard()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Saved ✓</div>
+
+<script>
+const DEFAULTS = [
+  {cat:"React", q:"What is the purpose of useEffect's dependency array?", a:"It tells React when to re-run the effect. Empty = once on mount; with deps = whenever a dep changes; omitted = every render."},
+  {cat:"API", q:"REST vs GraphQL — one key difference?", a:"REST exposes fixed endpoints per resource; GraphQL exposes one endpoint where the client declares exactly which fields it wants."},
+  {cat:"CS", q:"Big-O of binary search on a sorted array?", a:"O(log n) — the search space is halved every step."},
+  {cat:"JS", q:"Promise.all vs Promise.allSettled?", a:"all rejects fast on the first failure; allSettled waits for every promise and returns each result's status."},
+  {cat:"Git", q:"git rebase vs git merge?", a:"merge preserves history with a merge commit; rebase rewrites your commits on top of the target branch for a linear history."},
+  {cat:"Mobile", q:"Why prefer a state manager over prop drilling?", a:"It centralizes shared state, avoids passing props through many layers, and makes updates predictable and testable."},
+];
+
+let deck = load(), idx = 0, editing = -1, toastT;
+
+function load(){
+  try{ const d = JSON.parse(localStorage.getItem('devdeck')); if(Array.isArray(d)&&d.length) return d; }catch(e){}
+  return [...DEFAULTS];
+}
+function save(){ localStorage.setItem('devdeck', JSON.stringify(deck)); }
+
+function render(){
+  document.getElementById('card').classList.remove('flipped');
+  if(!deck.length){
+    document.getElementById('qText').textContent = "No cards yet.";
+    document.getElementById('aText').textContent = "Click '+ New Card' to start.";
+    document.getElementById('tagF').textContent = "empty";
+    document.getElementById('tagB').textContent = "empty";
+    document.getElementById('counter').textContent = "00 / 00";
+    document.getElementById('bar').style.width = "0%";
+    return;
+  }
+  idx = Math.max(0, Math.min(idx, deck.length-1));
+  const c = deck[idx];
+  document.getElementById('qText').textContent = c.q;
+  document.getElementById('aText').textContent = c.a;
+  document.getElementById('tagF').textContent = c.cat || "general";
+  document.getElementById('tagB').textContent = c.cat || "general";
+  const num = String(idx+1).padStart(2,'0'), tot = String(deck.length).padStart(2,'0');
+  document.getElementById('counter').textContent = `${num} / ${tot}`;
+  document.getElementById('idF').textContent = `#${num}`;
+  document.getElementById('idB').textContent = `#${num}`;
+  document.getElementById('bar').style.width = ((idx+1)/deck.length*100)+"%";
+}
+
+function flip(){ if(deck.length) document.getElementById('card').classList.toggle('flipped'); }
+function next(){ if(deck.length){ idx=(idx+1)%deck.length; render(); } }
+function prev(){ if(deck.length){ idx=(idx-1+deck.length)%deck.length; render(); } }
+
+function openModal(edit=false){
+  editing = edit ? idx : -1;
+  document.getElementById('modalTitle').textContent = edit ? "// edit_card" : "// new_card";
+  document.getElementById('fCat').value = edit ? deck[idx].cat : "";
+  document.getElementById('fQ').value = edit ? deck[idx].q : "";
+  document.getElementById('fA').value = edit ? deck[idx].a : "";
+  document.getElementById('modal').classList.add('show');
+  setTimeout(()=>document.getElementById('fQ').focus(),100);
+}
+function closeModal(){ document.getElementById('modal').classList.remove('show'); }
+function editCard(){ if(deck.length) openModal(true); }
+function saveCard(){
+  const cat = document.getElementById('fCat').value.trim() || "general";
+  const q = document.getElementById('fQ').value.trim();
+  const a = document.getElementById('fA').value.trim();
+  if(!q || !a){ toast("Question & answer required"); return; }
+  if(editing>=0){ deck[editing] = {cat,q,a}; toast("Card updated ✓"); }
+  else { deck.push({cat,q,a}); idx = deck.length-1; toast("Card added ✓"); }
+  save(); render(); closeModal();
+}
+function deleteCard(){
+  if(!deck.length) return;
+  if(!confirm("Delete this flashcard?")) return;
+  deck.splice(idx,1); save(); render(); toast("Deleted");
+}
+function resetDeck(){
+  if(!confirm("Reset deck to default cards? Custom cards will be lost.")) return;
+  deck = [...DEFAULTS]; idx = 0; save(); render(); toast("Deck reset ✓");
+}
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove('show'),1800);
+}
+
+document.addEventListener('keydown', e=>{
+  if(document.getElementById('modal').classList.contains('show')) return;
+  if(e.key==='ArrowRight') next();
+  else if(e.key==='ArrowLeft') prev();
+  else if(e.key===' '){ e.preventDefault(); flip(); }
+  else if(e.key.toLowerCase()==='n') openModal();
+});
+document.getElementById('modal').addEventListener('click', e=>{
+  if(e.target.id==='modal') closeModal();
+});
+
+render();
+</script>
+</body>
+</html>
